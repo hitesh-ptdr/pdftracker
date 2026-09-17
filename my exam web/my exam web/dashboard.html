@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>📚 Dashboard | Study Manager</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --surface: #f8f9fc;
+            --border: #e0e0e5;
+            --text: #1a1a2e;
+            --text-secondary: #666;
+            --accent: #4a7bd9;
+            --card-bg: #ffffff;
+            --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --modal-bg: rgba(0, 0, 0, 0.55);
+            --toast-bg: #1a1a2e;
+            --toast-text: #fff;
+            --pdf-bg: #fef2f2;
+            --pdf-accent: #dc2626;
+            --track-bg: #e8e8e8;
+            --track-fill: #4a7bd9;
+            --input-bg: #fff;
+            --danger: #dc2626;
+        }
+        body.dark {
+            --bg: #1e1e2e;
+            --surface: #2a2a3c;
+            --border: #484860;
+            --text: #e0e0f0;
+            --text-secondary: #b0b0c0;
+            --card-bg: #33334a;
+            --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            --modal-bg: rgba(0, 0, 0, 0.8);
+            --toast-bg: #f0f0ff;
+            --toast-text: #1a1a2e;
+            --pdf-bg: #3a2a2a;
+            --pdf-accent: #f87171;
+            --track-bg: #404050;
+            --track-fill: #5b8def;
+            --input-bg: #2a2a3c;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            transition: background 0.3s;
+            padding-bottom: 1rem;
+        }
+        .admin-element { display: none !important; }
+        body.is-admin .admin-element { display: revert !important; }
+
+        .topnav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 14px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .nav-left { display: flex; align-items: center; gap: 8px; }
+        .nav-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .btn-sm {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: var(--text);
+            transition: 0.15s;
+        }
+        .btn-sm:hover { background: var(--border); }
+        .breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; flex-wrap: wrap; }
+        .breadcrumb span { cursor: pointer; color: var(--accent); padding: 2px 6px; border-radius: 4px; }
+        .breadcrumb span:hover { background: var(--border); }
+        .breadcrumb span.current { color: var(--text); cursor: default; font-weight: 600; }
+
+        .search-box {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--input-bg);
+            color: var(--text);
+            font-size: 0.75rem;
+            width: 140px;
+            transition: 0.2s;
+        }
+        .search-box:focus { outline: none; border-color: var(--accent); width: 170px; }
+        .dark-toggle { font-size: 1.1rem; cursor: pointer; background: none; border: none; padding: 4px; }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 6px;
+        }
+        .tool-btn {
+            background: none;
+            border: none;
+            padding: 5px 9px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: var(--text);
+            border-radius: 4px;
+            transition: 0.15s;
+        }
+        .tool-btn:hover { background: var(--border); }
+        .tool-btn.active { background: var(--accent); color: #fff; }
+        .size-slider { width: 75px; height: 4px; cursor: pointer; accent-color: var(--accent); }
+        .size-val { font-size: 0.7rem; color: var(--text-secondary); min-width: 22px; text-align: center; }
+        .action-btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: 0.15s;
+        }
+        .action-btn:hover { opacity: 0.9; }
+        .action-btn.pdf { background: #dc2626; }
+        .toolbar-sep { width: 1px; height: 24px; background: var(--border); margin: 0 6px; }
+
+        .main { padding: 14px; max-width: 1100px; margin: auto; }
+        .folder-row { display: flex; flex-wrap: wrap; gap: 14px; }
+        .folder-row.vertical { flex-direction: column; }
+
+        .folder-row:not(.vertical) .folder-card {
+            display: flex; flex-direction: column; align-items: center; padding: 14px 10px;
+            cursor: pointer; background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 10px; transition: 0.15s; user-select: none; text-align: center;
+        }
+        .folder-row.vertical .folder-card {
+            display: flex; flex-direction: row; align-items: center; padding: 10px 14px; gap: 14px;
+            cursor: pointer; background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 10px; transition: 0.15s; user-select: none;
+        }
+        .folder-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+        .folder-icon {
+            border-radius: 6px; position: relative; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0; background: #eaf1fb;
+            width: 54px; height: 44px;
+        }
+        .folder-tab {
+            position: absolute; top: -7px; left: 0; border-radius: 4px 4px 0 0;
+            width: 40%; height: 25%; background: #c0d6f5;
+        }
+        .folder-name {
+            font-size: 0.82rem; font-weight: 600; margin-top: 6px;
+            display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center;
+        }
+        .folder-row.vertical .folder-name { margin-top: 0; flex: 1; }
+        .mini-btn {
+            background: none; border: 1px solid var(--border); border-radius: 4px;
+            padding: 3px 8px; cursor: pointer; font-size: 0.7rem; color: var(--text-secondary);
+            transition: 0.15s;
+        }
+        .mini-btn:hover { background: var(--border); }
+
+        .folder-row:not(.vertical) .pdf-card {
+            display: flex; flex-direction: column; align-items: center; padding: 14px 10px;
+            cursor: pointer; background: var(--pdf-bg); border: 1px solid var(--border);
+            border-radius: 10px; text-align: center; transition: 0.15s; user-select: none;
+        }
+        .folder-row.vertical .pdf-card {
+            display: flex; flex-direction: row; align-items: center; padding: 10px 14px; gap: 12px;
+            cursor: pointer; background: var(--pdf-bg); border: 1px solid var(--border);
+            border-radius: 10px; transition: 0.15s; user-select: none;
+        }
+        .pdf-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+        .pdf-icon-box {
+            display: flex; align-items: center; justify-content: center;
+            background: #fee2e2; border-radius: 6px; flex-shrink: 0; color: var(--pdf-accent);
+            width: 50px; height: 50px; font-size: 1.5rem;
+        }
+        body.dark .pdf-icon-box { background: #4a2020; }
+        .pdf-name { font-size: 0.78rem; font-weight: 500; margin-top: 6px; word-break: break-word; }
+        .folder-row.vertical .pdf-name { margin-top: 0; flex: 1; }
+        .pdf-size { font-size: 0.65rem; color: var(--text-secondary); }
+        .pdf-ticks { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
+
+        .tick-btn {
+            width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+            background: var(--card-bg); cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-size: 0.65rem; transition: 0.15s; flex-shrink: 0;
+        }
+        .tick-btn.checked { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: bold; }
+        .tick-btn.checked::after { content: '✓'; }
+
+        .revision-schedule {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 5px;
+            font-size: 0.62rem;
+            color: var(--text-secondary);
+        }
+        .revision-day-badge {
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text);
+            border-radius: 5px;
+            padding: 3px 6px;
+            font-size: 0.62rem;
+        }
+        .revision-schedule-info {
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+            margin-bottom: 14px;
+        }
+        .revision-day-row {
+            display: grid;
+            grid-template-columns: 70px 1fr;
+            gap: 10px;
+            align-items: center;
+            padding: 9px 10px;
+            margin-bottom: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .revision-day-row label {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .revision-day-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--input-bg);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.8rem;
+        }
+
+        .pdf-actions { display: flex; gap: 4px; margin-top: 6px; }
+        .pdf-actions button {
+            background: none; border: 1px solid var(--border); border-radius: 4px;
+            padding: 3px 9px; cursor: pointer; font-size: 0.65rem; color: var(--text-secondary);
+        }
+        .pdf-actions button:hover { background: var(--border); color: var(--text); }
+
+        .tracker-section {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; margin: 24px auto; max-width: 850px;
+            display: none;
+        }
+        .tracker-section.show { display: block; }
+        .tracker-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 18px; text-align: center; }
+        .tracker-row { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+        .tracker-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .tracker-circle { width: 56px; height: 56px; position: relative; }
+        .tracker-circle svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .tracker-bg { fill: none; stroke: var(--track-bg); stroke-width: 5; }
+        .tracker-fill {
+            fill: none; stroke: var(--track-fill); stroke-width: 5; stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+        .tracker-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 0.7rem; font-weight: 700; color: var(--text);
+        }
+        .tracker-label { font-size: 0.62rem; color: var(--text-secondary); letter-spacing: 0.3px; }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: var(--modal-bg);
+            display: none; align-items: center; justify-content: center; z-index: 200;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: var(--card-bg); border-radius: 14px; padding: 22px;
+            width: 94%; max-width: 460px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            max-height: 85vh; overflow-y: auto;
+        }
+        .modal-box h3 { margin-bottom: 16px; font-size: 1.05rem; }
+        .modal-box input[type="text"], .modal-box input[type="file"] {
+            width: 100%; padding: 9px 12px; margin: 6px 0 14px;
+            border: 1px solid var(--border); border-radius: 6px;
+            background: var(--input-bg); color: var(--text); font-size: 0.85rem;
+        }
+        .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+        .btn {
+            padding: 7px 18px; border-radius: 6px; border: none; cursor: pointer;
+            font-weight: 600; font-size: 0.8rem; transition: 0.2s;
+        }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-secondary { background: #e5e5ea; color: #333; }
+        body.dark .btn-secondary { background: #4a4a5a; color: #ddd; }
+        .btn-danger { background: var(--danger); color: #fff; }
+
+        .open-options { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+        .open-opt {
+            display: flex; align-items: center; gap: 12px; padding: 15px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; cursor: pointer; transition: 0.2s;
+        }
+        .open-opt:hover { background: var(--border); }
+        .open-opt-name { font-weight: 600; font-size: 0.9rem; }
+
+        .req-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; margin-bottom: 8px;
+        }
+        .req-info { font-size: 0.82rem; text-align: left; }
+        .req-btns { display: flex; gap: 5px; }
+        .btn-approve { background: #22c55e; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+        .btn-reject { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+
+        .setting-block {
+            margin: 18px 0;
+            padding: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .setting-block label { font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 8px; }
+        .toggle-switch {
+            position: relative; display: inline-block; width: 46px; height: 26px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background: #ccc; border-radius: 26px; transition: 0.3s;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px;
+            left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;
+        }
+        input:checked + .slider { background: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .admin-list-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 0; border-bottom: 1px solid var(--border);
+        }
+
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: var(--toast-bg); color: var(--toast-text); padding: 10px 26px;
+            border-radius: 26px; z-index: 300; transition: 0.25s; font-size: 0.82rem;
+            pointer-events: none; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 600px) {
+            .topnav { flex-direction: column; align-items: flex-start; }
+            .toolbar { gap: 6px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="topnav">
+        <div class="nav-left">
+            <div class="breadcrumb" id="breadcrumb"><span>🏠 Home</span></div>
+        </div>
+        <div class="nav-right">
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search files & folders...">
+            <button class="btn-sm admin-element" id="reqNotificationBtn" style="background:#ffb300; color:#000; font-weight:bold;">🔔 Requests (<span id="reqCount">0</span>)</button>
+            <button class="btn-sm admin-element" id="settingsBtn" title="Advanced Settings">⚙️ Settings</button>
+            <button class="dark-toggle" id="darkToggle">🌓</button>
+            <button class="btn-sm" id="accountBtn" title="My Account">👤 Account</button>
+        </div>
+    </nav>
+
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <button class="tool-btn" id="layoutH" title="Horizontal Grid">↔️ Grid</button>
+            <button class="tool-btn" id="layoutV" title="Vertical List">↕️ List</button>
+        </div>
+        <div class="toolbar-group">
+            <input type="range" class="size-slider" id="sizeSlider" min="30" max="130" value="50">
+            <span class="size-val" id="sizeVal">50</span>
+        </div>
+        <div class="toolbar-sep admin-element"></div>
+        <button class="action-btn admin-element" id="addFolderBtn">📁+ New Folder</button>
+        <button class="action-btn pdf admin-element" id="uploadPdfBtn" style="display: none;">📄+ Upload PDF</button>
+    </div>
+
+    <div class="main" id="mainContainer"></div>
+
+    <div class="tracker-section" id="trackerSection">
+        <div class="tracker-title">📊 Revision Progress (All PDFs)</div>
+        <div class="tracker-row">
+            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track1" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText1">0%</span></div><span class="tracker-label">Rev 1</span></div>
+            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track2" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText2">0%</span></div><span class="tracker-label">Rev 2</span></div>
+            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track3" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText3">0%</span></div><span class="tracker-label">Rev 3</span></div>
+            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track4" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText4">0%</span></div><span class="tracker-label">Rev 4</span></div>
+            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track5" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText5">0%</span></div><span class="tracker-label">Rev 5</span></div>
+            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track6" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText6">0%</span></div><span class="tracker-label">Rev 6</span></div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-box">
+            <h3 id="modalTitle">New Folder</h3>
+            <input type="text" id="modalInput" placeholder="Enter folder name...">
+            <div class="modal-btns">
+                <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+                <button class="btn btn-primary" id="modalOk">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="pdfModal">
+        <div class="modal-box">
+            <h3>📄 Upload PDF Files</h3>
+            <input type="file" id="pdfFileInput" accept=".pdf" multiple>
+            <small style="color:var(--text-secondary);">You can select multiple PDF files at once.</small>
+            <div class="modal-btns">
+                <button class="btn btn-secondary" id="pdfCancel">Cancel</button>
+                <button class="btn btn-primary" id="pdfOk">Upload</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="reqModal">
+        <div class="modal-box" style="max-width:480px;">
+            <h3>🔔 Pending Login Requests</h3>
+            <div id="reqListContainer" style="margin: 16px 0; max-height: 300px; overflow-y: auto;"></div>
+            <div class="modal-btns"><button class="btn btn-secondary" onclick="document.getElementById('reqModal').classList.remove('active')">Close</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="openModal">
+        <div class="modal-box">
+            <h3 id="openTitle">📄 Open PDF</h3>
+            <div class="open-options">
+                <div class="open-opt" onclick="app.openIn('browser')"><div class="open-opt-name">👁️ Open in Browser</div></div>
+                <div class="open-opt" onclick="app.openIn('download')"><div class="open-opt-name">📥 Download</div></div>
+                <div class="open-opt" onclick="app.openIn('share')"><div class="open-opt-name">🔗 Share (WhatsApp / More)</div></div>
+            </div>
+            <div class="modal-btns"><button class="btn btn-secondary" onclick="document.getElementById('openModal').classList.remove('active')">Close</button></div>
+        </div>
+    </div>
+
+    <!-- Advanced Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-box" style="max-width:520px;">
+            <h3>⚙️ Advanced Settings</h3>
+
+            <div class="setting-block">
+                <label>🔐 Require Admin Approval for New Logins</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="approvalToggle" onchange="app.updateApprovalSetting()">
+                    <span class="slider"></span>
+                </label>
+                <small style="color:var(--text-secondary); display:block; margin-top:4px;">When ON, new users must be approved by an admin before they can access the dashboard.</small>
+            </div>
+
+            <div class="setting-block">
+                <label>👥 Manage Admin Users</label>
+                <div id="adminListContainer" style="max-height:220px; overflow-y:auto; margin:10px 0;">
+                    <p style="color:var(--text-secondary); font-size:0.8rem;">Loading user list...</p>
+                </div>
+                <small style="color:var(--text-secondary);">Super Admin (vkpanwar2004@gmail.com) cannot be changed.</small>
+            </div>
+
+            <div class="setting-block">
+                <label>💾 Backup / Restore Data</label>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn btn-primary" id="exportBtn">💾 Backup (JSON)</button>
+                    <button class="btn btn-secondary" id="importBtn">📂 Restore</button>
+                </div>
+                <input type="file" id="importFile" accept=".json" style="display:none;">
+                <small style="color:var(--text-secondary); display:block; margin-top:6px;">Backup downloads folder structure. PDF files are stored in browser database.</small>
+            </div>
+
+            <div class="setting-block">
+                <label>⚠️ Danger Zone</label>
+                <button class="btn btn-danger" id="clearDataBtn">🗑️ Reset All Data</button>
+                <small style="color:var(--danger); display:block; margin-top:4px;">This permanently deletes all folders and PDFs. This cannot be undone!</small>
+            </div>
+
+            <div class="modal-btns">
+                <button class="btn btn-secondary" id="closeSettings">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Edit Revision Schedule Modal -->
+    <div class="modal-overlay" id="scheduleModal">
+        <div class="modal-box" style="max-width:430px;">
+            <h3 id="scheduleModalTitle">📅 Revision Schedule</h3>
+            <p class="revision-schedule-info">
+                Yahan har revision ki <strong>date ka sirf day number (1–30)</strong> set karo.
+                Example: aaj 18 hai, to Rev 1 = <strong>18</strong> aur agla revision do din baad ho to Rev 2 = <strong>20</strong>.
+                Ye date baad me bhi edit kar sakte ho.
+            </p>
+            <div id="revisionScheduleList"></div>
+            <div class="modal-btns">
+                <button class="btn btn-secondary" id="scheduleCancel">Cancel</button>
+                <button class="btn btn-primary" id="scheduleSave">💾 Save Dates</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="accountModal">
+        <div class="modal-box">
+            <h3 id="accName">👤 User</h3>
+            <p id="accDetail" style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:6px;"></p>
+            <p id="accRole" style="font-size:0.85rem; font-weight:bold; color:var(--accent); margin-bottom:20px;"></p>
+            <div class="modal-btns">
+                <button class="btn btn-secondary" id="closeAccount" style="flex:1;">Close</button>
+                <button class="btn btn-danger" id="logoutBtn" style="flex:1;">🚪 Log Out</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            // ---------- CONSTANTS ----------
+            const STORAGE_KEY = 'dashboard_data_v3_tree';
+            const USER_KEY = 'dashboard_user_profile';
+            const DARK_KEY = 'dashboard_dark';
+            const APP_USERS_KEY = 'portal_registered_users';
+            const SETTINGS_KEY = 'dashboard_settings';
+
+            const DB_NAME = 'PDF_Storage_DB';
+            const DB_VERSION = 1;
+            const STORE_NAME = 'pdfs';
+
+            const SUPER_ADMIN_EMAIL = 'vkpanwar2004@gmail.com';
+
+            let db = null;
+            let isAdmin = false;
+            let currentUserEmail = '';
+
+            let tree = { id: 'root', name: 'Home', children: [], prefs: { layout: 'horizontal', size: 50 } };
+            let path = ['root'];
+            let nextId = 1;
+            let currentPdfId = null;
+
+            // ---------- INDEXEDDB ----------
+            function initDB(callback) {
+                let request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = () => { console.error("IndexedDB initialization failed"); callback(); };
+                request.onsuccess = (e) => { db = e.target.result; callback(); };
+                request.onupgradeneeded = (e) => {
+                    let database = e.target.result;
+                    if (!database.objectStoreNames.contains(STORE_NAME)) {
+                        database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+            }
+
+            function savePdfToDB(id, blobData, callback) {
+                if (!db) return callback(false);
+                try {
+                    let tx = db.transaction(STORE_NAME, 'readwrite');
+                    let store = tx.objectStore(STORE_NAME);
+                    store.put({ id: id, data: blobData });
+                    tx.oncomplete = () => callback(true);
+                    tx.onerror = () => callback(false);
+                } catch(e) { callback(false); }
+            }
+
+            function getPdfFromDB(id, callback) {
+                if (!db) return callback(null);
+                try {
+                    let tx = db.transaction(STORE_NAME, 'readonly');
+                    let req = tx.objectStore(STORE_NAME).get(id);
+                    req.onsuccess = () => callback(req.result ? req.result.data : null);
+                    req.onerror = () => callback(null);
+                } catch(e) { callback(null); }
+            }
+
+            function deletePdfFromDB(id) {
+                if (!db) return;
+                try {
+                    let tx = db.transaction(STORE_NAME, 'readwrite');
+                    tx.objectStore(STORE_NAME).delete(id);
+                } catch(e) { /* ignore */ }
+            }
+
+            // ---------- SETTINGS ----------
+            function getSettings() {
+                let s = localStorage.getItem(SETTINGS_KEY);
+                if (s) {
+                    try { return JSON.parse(s); } catch(e) {}
+                }
+                return { approvalRequired: true };
+            }
+
+            function saveSettings(settings) {
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+            }
+
+            // ---------- AUTH & USER MANAGEMENT ----------
+            function checkUserAuth() {
+                const sessionData = localStorage.getItem(USER_KEY);
+                if (!sessionData) {
+                    // Not logged in at all
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                let u;
+                try { u = JSON.parse(sessionData); } catch(e) {
+                    localStorage.removeItem(USER_KEY);
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const email = (u.email || '').trim().toLowerCase();
+                currentUserEmail = email;
+
+                document.getElementById('accName').textContent = '👤 ' + (u.name || 'User');
+                document.getElementById('accDetail').textContent = u.email;
+
+                // ✅ Super Admin always gets full access
+                if (email === SUPER_ADMIN_EMAIL) {
+                    isAdmin = true;
+                    document.body.classList.add('is-admin');
+                    document.getElementById('accRole').textContent = 'Role: Super Admin 👑';
+                    renderRequestsCount();
+                    return;
+                }
+
+                // 🔍 Look up user in registered users list
+                const users = JSON.parse(localStorage.getItem(APP_USERS_KEY)) || [];
+                const userRecord = users.find(user => user.email === email);
+                const settings = getSettings();
+
+                // ❌ If user not found in registered list at all
+                if (!userRecord) {
+                    alert('⚠️ Invalid user account. Please register first.');
+                    localStorage.removeItem(USER_KEY);
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // ❌ APPROVAL CHECK — this is the critical enforcement
+                if (settings.approvalRequired && userRecord.status !== 'approved') {
+                    alert('⚠️ Your account is pending admin approval. You cannot access the dashboard until an admin approves your request.');
+                    localStorage.removeItem(USER_KEY);
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // ✅ User is approved — set admin flag if they have admin role
+                if (userRecord.role === 'admin') {
+                    isAdmin = true;
+                    document.body.classList.add('is-admin');
+                    document.getElementById('accRole').textContent = 'Role: Admin ⭐';
+                } else {
+                    isAdmin = false;
+                    document.body.classList.remove('is-admin');
+                    document.getElementById('accRole').textContent = 'Role: Viewer 👁️';
+                }
+                renderRequestsCount();
+            }
+
+            function renderRequestsCount() {
+                if (!isAdmin) return;
+                let users = JSON.parse(localStorage.getItem(APP_USERS_KEY)) || [];
+                let pending = users.filter(u => u.status === 'pending');
+                document.getElementById('reqCount').textContent = pending.length;
+            }
+
+            window.app = window.app || {};
+
+            app.openRequestsModal = function() {
+                if (!isAdmin) return;
+                let users = JSON.parse(localStorage.getItem(APP_USERS_KEY)) || [];
+                let pending = users.filter(u => u.status === 'pending');
+                let container = document.getElementById('reqListContainer');
+                container.innerHTML = '';
+
+                if (pending.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); padding:20px;">✅ No pending requests.</p>';
+                } else {
+                    pending.forEach(u => {
+                        let div = document.createElement('div');
+                        div.className = 'req-item';
+                        div.innerHTML = `
+                            <div class="req-info">
+                                <strong>${u.name || 'Unknown'}</strong><br>
+                                <small style="color:var(--text-secondary);">${u.email}</small>
+                            </div>
+                            <div class="req-btns">
+                                <button class="btn-approve" onclick="app.manageStatus('${u.email}', 'approved')">✓ Approve</button>
+                                <button class="btn-reject" onclick="app.manageStatus('${u.email}', 'rejected')">✗ Reject</button>
+                            </div>`;
+                        container.appendChild(div);
+                    });
+                }
+                document.getElementById('reqModal').classList.add('active');
+            };
+
+            app.manageStatus = function(email, newStatus) {
+                if (!isAdmin) return;
+                let users = JSON.parse(localStorage.getItem(APP_USERS_KEY)) || [];
+                let idx = users.findIndex(u => u.email === email);
+                if (idx !== -1) {
+                    users[idx].status = newStatus;
+                    localStorage.setItem(APP_USERS_KEY, JSON.stringify(users));
+                    toast(newStatus === 'approved' ? '✅ User approved successfully!' : '❌ User rejected.');
+                    renderRequestsCount();
+                    app.openRequestsModal(); // refresh modal
+                }
+            };
+
+            // ---------- SETTINGS MODAL ----------
+            function refreshSettingsModal() {
+                const settings = getSettings();
+                document.getElementById('approvalToggle').checked = settings.approvalRequired;
+                renderAdminList();
+            }
+
+            app.updateApprovalSetting = function() {
+                if (!isAdmin) return;
+                let settings = getSettings();
+                settings.approvalRequired = document.getElementById('approvalToggle').checked;
+                saveSettings(settings);
+                toast('✅ Approval setting updated!');
+            };
+
+            function renderAdminList() {
+                const container = document.getElementById('adminListContainer');
+                if (!container) return;
+                let users = JSON.parse(localStorage.getItem(APP_USERS_KEY)) || [];
+                let approvedUsers = users.filter(u => u.status === 'approved' && u.email !== SUPER_ADMIN_EMAIL);
+
+                let html = '<div style="font-weight:600; margin-bottom:8px;">🔒 Super Admin (Permanent)</div>';
+                html += '<div class="admin-list-item"><span>vkpanwar2004@gmail.com</span><span style="color:var(--accent); font-weight:600;">👑 Super Admin</span></div>';
+
+                if (approvedUsers.length > 0) {
+                    html += '<div style="font-weight:600; margin:14px 0 8px;">👥 Other Approved Users</div>';
+                    approvedUsers.forEach(u => {
+                        let isAdminUser = u.role === 'admin';
+                        html += `<div class="admin-list-item">
+                            <span>${u.email} <small style="color:var(--text-secondary);">(${u.name || 'No name'})</small></span>
+                            <label class="toggle-switch" style="width:40px; height:22px;">
+                                <input type="checkbox" ${isAdminUser ? 'checked' : ''} onchange="app.toggleAdminRole('${u.email}', this.checked)">
+                                <span class="slider" style="width:40px; height:22px;"></span>
+                            </label>
+                        </div>`;
+                    });
+                } else {
+                    html += '<p style="color:var(--text-secondary); font-size:0.8rem; margin-top:8px;">No other approved users yet.</p>';
+                }
+                container.innerHTML = html;
+            }
+
+            app.toggleAdminRole = function(email, makeAdmin) {
+                if (!isAdmin) return;
+                let users = JSON.parse(localStorage.getItem(APP_USERS_KEY)) || [];
+                let idx = users.findIndex(u => u.email === email);
+                if (idx !== -1) {
+                    users[idx].role = makeAdmin ? 'admin' : 'user';
+                    localStorage.setItem(APP_USERS_KEY, JSON.stringify(users));
+                    toast(makeAdmin ? '⭐ User promoted to Admin!' : '👁️ Admin role removed (now Viewer).');
+                    renderAdminList();
+                }
+            };
+
+            // ---------- TREE FUNCTIONS ----------
+            function load() {
+                const localData = localStorage.getItem(STORAGE_KEY);
+                if (localData) {
+                    try {
+                        const parsed = JSON.parse(localData);
+                        if (parsed && parsed.id === 'root') {
+                            tree = parsed;
+                            fixTree(tree);
+                        } else { createDefaults(); }
+                    } catch(e) { createDefaults(); }
+                } else { createDefaults(); }
+
+                nextId = 1;
+                (function walk(n) {
+                    if (typeof n.id === 'number' && n.id >= nextId) nextId = n.id + 1;
+                    if (n.children) n.children.forEach(walk);
+                })(tree);
+            }
+
+            function createDefaults() {
+                if (localStorage.getItem(STORAGE_KEY)) return;
+                tree = {
+                    id: 'root', name: 'Home', prefs: { layout: 'horizontal', size: 50 },
+                    children: [
+                        { id: 1, name: 'UPSC', type: 'folder', prefs: { layout: 'horizontal', size: 50 }, children: [
+                            { id: 2, name: 'Prelims', type: 'folder', prefs: { layout: 'horizontal', size: 50 }, children: [] },
+                            { id: 3, name: 'Mains', type: 'folder', prefs: { layout: 'horizontal', size: 50 }, children: [] }
+                        ]},
+                        { id: 4, name: 'MPPSC', type: 'folder', prefs: { layout: 'horizontal', size: 50 }, children: [
+                            { id: 5, name: 'Prelims', type: 'folder', prefs: { layout: 'horizontal', size: 50 }, children: [] },
+                            { id: 6, name: 'Mains', type: 'folder', prefs: { layout: 'horizontal', size: 50 }, children: [] }
+                        ]}
+                    ]
+                };
+                save();
+            }
+
+            function fixTree(n) {
+                if (!n.prefs) n.prefs = { layout: 'horizontal', size: 50 };
+
+                if (n.type === 'pdf') {
+                    if (!Array.isArray(n.ticks)) n.ticks = [];
+                    n.ticks = n.ticks.map(v => {
+                        if (typeof v === 'boolean') return v ? 100 : 0;
+                        const num = Number(v);
+                        return Number.isFinite(num) ? Math.max(0, Math.min(100, num)) : 0;
+                    });
+                    while (n.ticks.length < 6) n.ticks.push(0);
+                    if (n.ticks.length > 6) n.ticks = n.ticks.slice(0, 6);
+
+                    if (!Array.isArray(n.revisionDates)) n.revisionDates = [];
+                    n.revisionDates = n.revisionDates.map(v => {
+                        const num = Number(v);
+                        return Number.isInteger(num) && num >= 1 && num <= 30 ? num : null;
+                    });
+                    while (n.revisionDates.length < 6) n.revisionDates.push(null);
+                    if (n.revisionDates.length > 6) n.revisionDates = n.revisionDates.slice(0, 6);
+                }
+
+                if (n.children) n.children.forEach(fixTree);
+            }
+
+            function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tree)); }
+
+            function getCurrent() {
+                let n = tree;
+                for (let i = 1; i < path.length; i++) {
+                    let c = n.children?.find(x => x.id == path[i]);
+                    if (c) n = c;
+                }
+                return n;
+            }
+
+            function nav(id) {
+                if (id === 'root') path = ['root'];
+                else {
+                    let p = findPath(tree, id, []);
+                    if (p) path = p;
+                }
+                render();
+            }
+
+            function findPath(n, target, p) {
+                p = [...p, n.id];
+                if (n.id == target) return p;
+                if (n.children) {
+                    for (let c of n.children) {
+                        if (c.type === 'folder') {
+                            let r = findPath(c, target, p);
+                            if (r) return r;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function findById(node, id) {
+                if (node.id == id) return node;
+                if (node.children) {
+                    for (let c of node.children) {
+                        let found = findById(c, id);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            function getAllPdfs(node) {
+                let pdfs = [];
+                if (node.type === 'pdf') pdfs.push(node);
+                if (node.children) node.children.forEach(c => pdfs = pdfs.concat(getAllPdfs(c)));
+                return pdfs;
+            }
+
+            function toast(msg) {
+                const t = document.getElementById('toast');
+                t.textContent = msg;
+                t.classList.add('show');
+                setTimeout(() => t.classList.remove('show'), 2400);
+            }
+
+            function render() {
+                const current = getCurrent();
+                const main = document.getElementById('mainContainer');
+                const query = document.getElementById('searchBox').value.trim().toLowerCase();
+
+                // Breadcrumb
+                const bc = document.getElementById('breadcrumb');
+                bc.innerHTML = '';
+                let temp = tree;
+                path.forEach((id, idx) => {
+                    if (idx > 0) temp = temp.children.find(x => x.id == id);
+                    let sp = document.createElement('span');
+                    sp.textContent = (idx === 0) ? '🏠 Home' : ' › ' + temp.name;
+                    if (idx === path.length - 1) sp.className = 'current';
+                    else sp.onclick = () => nav(id);
+                    bc.appendChild(sp);
+                });
+
+                // Show/hide upload button
+                if (path.length === 1 || !isAdmin) {
+                    document.getElementById('uploadPdfBtn').style.display = 'none';
+                } else {
+                    document.getElementById('uploadPdfBtn').style.display = 'inline-block';
+                }
+
+                let items = current.children || [];
+                if (query) items = items.filter(x => x.name.toLowerCase().includes(query));
+
+                if (items.length === 0) {
+                    main.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:50px 0;font-size:0.9rem;">📂 No files or folders here.</p>';
+                    updateTracker();
+                    return;
+                }
+
+                const prefs = current.prefs || { layout: 'horizontal', size: 50 };
+                const grid = document.createElement('div');
+                grid.className = 'folder-row' + (prefs.layout === 'vertical' ? ' vertical' : '');
+
+                if (prefs.layout !== 'vertical') {
+                    grid.style.display = 'grid';
+                    grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${prefs.size + 90}px, 1fr))`;
+                    grid.style.gap = '14px';
+                }
+
+                items.forEach(item => {
+                    let card = document.createElement('div');
+                    if (item.type === 'pdf') {
+                        card.className = 'pdf-card';
+                        card.onclick = (e) => {
+                            if (!e.target.classList.contains('tick-btn') && !e.target.closest('.pdf-actions'))
+                                app.openPdfOptions(item.id);
+                        };
+                        let ticks = '';
+                        for (let i = 0; i < 6; i++) {
+                            const pct = Number(item.ticks?.[i]) || 0;
+                            ticks += `<button class="tick-btn ${pct >= 100 ? 'checked' : ''}" onclick="event.stopPropagation(); app.cycleRevision('${item.id}', ${i})" title="Rev ${i+1}: ${pct}% — click to add 10%"></button>`;
+                        }
+
+                        const schedule = (item.revisionDates || []).slice(0, 6)
+                            .map((day, i) => day ? `<span class="revision-day-badge">R${i+1}: ${day}</span>` : '')
+                            .filter(Boolean).join('');
+
+                        const overall = Math.round(
+                            item.ticks.slice(0, 6).reduce((sum, v) => sum + (Number(v) || 0), 0) / 6
+                        );
+
+                        const actionButtons = isAdmin ? `
+                            <div class="pdf-actions">
+                                <button onclick="event.stopPropagation(); app.editSchedule('${item.id}')" title="Set revision dates">📅 Dates</button>
+                                <button onclick="event.stopPropagation(); app.deleteItem('${item.id}')" title="Delete PDF">🗑️</button>
+                            </div>` : '';
+
+                        card.innerHTML = `
+                            <div class="pdf-icon-box">📄</div>
+                            <div class="pdf-name">${item.name} <span class="pdf-size">(${item.size || 'unknown'})</span></div>
+                            <div class="pdf-ticks">${ticks}</div>
+                            <div class="progress-summary">Overall: ${overall}%</div>
+                            ${schedule ? `<div class="revision-schedule">${schedule}</div>` : ''}
+                            ${actionButtons}`;
+                    } else {
+                        card.className = 'folder-card';
+                        card.onclick = () => nav(item.id);
+                        let delBtn = isAdmin ? `<button class="mini-btn" onclick="event.stopPropagation(); app.deleteItem(${item.id})" title="Delete Folder">🗑️</button>` : '';
+                        card.innerHTML = `
+                            <div class="folder-icon"><div class="folder-tab"></div><span style="font-size:1.2rem;">📘</span></div>
+                            <div class="folder-name">${item.name} ${delBtn}</div>`;
+                    }
+                    grid.appendChild(card);
+                });
+
+                main.innerHTML = '';
+                main.appendChild(grid);
+                updateTracker();
+            }
+
+            function updateTracker() {
+                const allPdfs = getAllPdfs(tree);
+                const tracker = document.getElementById('trackerSection');
+                if (allPdfs.length === 0) {
+                    tracker.style.display = 'none';
+                    return;
+                }
+                tracker.style.display = 'block';
+                for (let i = 0; i < 6; i++) {
+                    const total = allPdfs.reduce((sum, p) => sum + (Number(p.ticks?.[i]) || 0), 0);
+                    const pct = Math.round(total / allPdfs.length);
+                    document.getElementById(`trackText${i+1}`).textContent = pct + '%';
+                    document.getElementById(`track${i+1}`).style.strokeDashoffset = 94.2 - (94.2 * pct) / 100;
+                }
+            }
+
+            // ---------- EVENT BINDINGS ----------
+            document.getElementById('layoutH').onclick = () => {
+                getCurrent().prefs.layout = 'horizontal';
+                save();
+                render();
+                document.getElementById('layoutH').classList.add('active');
+                document.getElementById('layoutV').classList.remove('active');
+            };
+            document.getElementById('layoutV').onclick = () => {
+                getCurrent().prefs.layout = 'vertical';
+                save();
+                render();
+                document.getElementById('layoutV').classList.add('active');
+                document.getElementById('layoutH').classList.remove('active');
+            };
+
+            document.getElementById('sizeSlider').oninput = (e) => {
+                let v = parseInt(e.target.value);
+                document.getElementById('sizeVal').textContent = v;
+                getCurrent().prefs.size = v;
+                save();
+                render();
+            };
+
+            document.getElementById('searchBox').oninput = () => render();
+
+            document.getElementById('darkToggle').onclick = () => {
+                document.body.classList.toggle('dark');
+                localStorage.setItem(DARK_KEY, document.body.classList.contains('dark'));
+            };
+            if (localStorage.getItem(DARK_KEY) === 'true') document.body.classList.add('dark');
+
+            // New Folder Modal
+            const modal = document.getElementById('modal');
+            document.getElementById('addFolderBtn').onclick = () => {
+                if (!isAdmin) return;
+                document.getElementById('modalTitle').textContent = '📁 Create New Folder';
+                document.getElementById('modalInput').value = '';
+                modal.classList.add('active');
+            };
+            document.getElementById('modalCancel').onclick = () => modal.classList.remove('active');
+            document.getElementById('modalOk').onclick = () => {
+                if (!isAdmin) return;
+                let name = document.getElementById('modalInput').value.trim();
+                if (!name) { toast('Please enter a folder name.'); return; }
+                let cur = getCurrent();
+                if (!cur.children) cur.children = [];
+                cur.children.push({
+                    id: nextId++,
+                    name,
+                    type: 'folder',
+                    prefs: { layout: 'horizontal', size: 50 },
+                    children: []
+                });
+                save();
+                modal.classList.remove('active');
+                toast('📁 Folder created!');
+                render();
+            };
+
+            // Upload PDF Modal
+            const pdfModal = document.getElementById('pdfModal');
+            document.getElementById('uploadPdfBtn').onclick = () => {
+                if (!isAdmin) return;
+                document.getElementById('pdfFileInput').value = '';
+                pdfModal.classList.add('active');
+            };
+            document.getElementById('pdfCancel').onclick = () => pdfModal.classList.remove('active');
+            document.getElementById('pdfOk').onclick = () => {
+                if (!isAdmin) return;
+                let files = document.getElementById('pdfFileInput').files;
+                if (!files.length) { toast('Please select at least one PDF file.'); return; }
+                let cur = getCurrent();
+                if (!cur.children) cur.children = [];
+                let loaded = 0;
+                for (let i = 0; i < files.length; i++) {
+                    let file = files[i];
+                    let pId = 'pdf_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+                    savePdfToDB(pId, file, (success) => {
+                        if (success) {
+                            cur.children.push({
+                                id: pId,
+                                name: file.name,
+                                type: 'pdf',
+                                size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+                                ticks: [0, 0, 0, 0, 0, 0], revisionDates: [null, null, null, null, null, null]
+                            });
+                        }
+                        loaded++;
+                        if (loaded === files.length) {
+                            save();
+                            pdfModal.classList.remove('active');
+                            toast('📄 PDF(s) uploaded successfully!');
+                            render();
+                        }
+                    });
+                }
+            };
+
+            // Delete item
+            app.deleteItem = function(id) {
+                if (!isAdmin) { toast('⚠️ Only admins can delete items.'); return; }
+                if (!confirm('Are you sure you want to permanently delete this item?')) return;
+                (function remove(n) {
+                    if (!n.children) return;
+                    let idx = n.children.findIndex(x => x.id == id);
+                    if (idx !== -1) {
+                        n.children.splice(idx, 1);
+                        deletePdfFromDB(id);
+                        return;
+                    }
+                    n.children.forEach(remove);
+                })(tree);
+                save();
+                toast('🗑️ Item deleted.');
+                render();
+            };
+
+            // Quick revision progress: 0 -> 10 -> 20 ... -> 100 -> 0.
+            app.cycleRevision = function(id, idx) {
+                const p = findById(tree, id);
+                if (!p || idx < 0 || idx >= 6) return;
+
+                if (!Array.isArray(p.ticks)) p.ticks = [];
+                while (p.ticks.length < 6) p.ticks.push(0);
+
+                let pct = Number(p.ticks[idx]) || 0;
+                pct = pct >= 100 ? 0 : pct + 10;
+                p.ticks[idx] = pct;
+
+                save();
+                updateTracker();
+                render();
+            };
+
+            app.toggleTick = function(id, idx) {
+                app.cycleRevision(id, idx);
+            };
+
+            // Edit future revision dates as day numbers 1–30.
+            app.editSchedule = function(id) {
+                if (!isAdmin) {
+                    toast('⚠️ Only admins can edit revision dates.');
+                    return;
+                }
+
+                const p = findById(tree, id);
+                if (!p || p.type !== 'pdf') return;
+                currentPdfId = id;
+
+                if (!Array.isArray(p.revisionDates)) p.revisionDates = [];
+                while (p.revisionDates.length < 6) p.revisionDates.push(null);
+
+                document.getElementById('scheduleModalTitle').textContent = '📅 Dates: ' + p.name;
+                const list = document.getElementById('revisionScheduleList');
+                list.innerHTML = '';
+
+                for (let i = 0; i < 6; i++) {
+                    const value = Number(p.revisionDates[i]);
+                    const safeValue = Number.isInteger(value) && value >= 1 && value <= 30 ? value : '';
+
+                    const row = document.createElement('div');
+                    row.className = 'revision-day-row';
+                    row.innerHTML = `
+                        <label>Rev ${i + 1}</label>
+                        <input class="revision-day-input" id="revDay${i}"
+                               type="number" min="1" max="30" step="1"
+                               placeholder="Day (1–30)" value="${safeValue}">
+                    `;
+                    list.appendChild(row);
+                }
+
+                document.getElementById('scheduleModal').classList.add('active');
+            };
+
+            document.getElementById('scheduleCancel').onclick = () => {
+                document.getElementById('scheduleModal').classList.remove('active');
+            };
+
+            document.getElementById('scheduleSave').onclick = () => {
+                if (!isAdmin) return;
+                const p = findById(tree, currentPdfId);
+                if (!p || p.type !== 'pdf') return;
+
+                p.revisionDates = [];
+                for (let i = 0; i < 6; i++) {
+                    const raw = document.getElementById(`revDay${i}`).value.trim();
+                    if (raw === '') {
+                        p.revisionDates.push(null);
+                        continue;
+                    }
+
+                    const day = Number(raw);
+                    if (!Number.isInteger(day) || day < 1 || day > 30) {
+                        toast('⚠️ Date must be a whole number from 1 to 30.');
+                        return;
+                    }
+                    p.revisionDates.push(day);
+                }
+
+                save();
+                document.getElementById('scheduleModal').classList.remove('active');
+                toast('✅ Revision dates saved!');
+                render();
+            };
+
+            // Open PDF options
+            app.openPdfOptions = function(id) {
+                currentPdfId = id;
+                let pdfNode = findById(tree, id);
+                document.getElementById('openTitle').textContent = pdfNode ? '📄 ' + pdfNode.name : '📄 Open PDF';
+                document.getElementById('openModal').classList.add('active');
+            };
+
+            app.openIn = function(mode) {
+                document.getElementById('openModal').classList.remove('active');
+                let p = findById(tree, currentPdfId);
+                if (!p) return;
+                getPdfFromDB(currentPdfId, (fileBlob) => {
+                    if (!fileBlob) { toast('❌ File not found in database!'); return; }
+                    let bUrl = URL.createObjectURL(fileBlob);
+                    if (mode === 'browser') {
+                        window.open(bUrl, '_blank');
+                    } else if (mode === 'download') {
+                        let a = document.createElement('a');
+                        a.href = bUrl;
+                        a.download = p.name;
+                        a.click();
+                    } else if (mode === 'share') {
+                        if (navigator.share) {
+                            let file = new File([fileBlob], p.name, { type: 'application/pdf' });
+                            navigator.share({ files: [file], title: p.name, text: 'Study material: ' + p.name })
+                                .then(() => toast('🔗 Shared successfully!'))
+                                .catch(() => toast('⚠️ Sharing cancelled.'));
+                        } else {
+                            toast('❌ Your browser does not support direct file sharing.');
+                        }
+                    }
+                });
+            };
+
+            // Settings modal
+            document.getElementById('settingsBtn').onclick = () => {
+                if (!isAdmin) return;
+                refreshSettingsModal();
+                document.getElementById('settingsModal').classList.add('active');
+            };
+            document.getElementById('closeSettings').onclick = () => document.getElementById('settingsModal').classList.remove('active');
+
+            document.getElementById('exportBtn').onclick = () => {
+                if (!isAdmin) return;
+                let a = document.createElement('a');
+                a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(tree, null, 2));
+                a.download = 'study_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+                a.click();
+                toast('💾 Backup downloaded.');
+            };
+
+            document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+            document.getElementById('importFile').onchange = (e) => {
+                if (!isAdmin) return;
+                let file = e.target.files[0];
+                if (!file) return;
+                let reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        let data = JSON.parse(ev.target.result);
+                        if (data && data.id === 'root') {
+                            tree = data;
+                            fixTree(tree);
+                            save();
+                            toast('✅ Data restored successfully!');
+                            render();
+                        } else {
+                            toast('❌ Invalid backup file format.');
+                        }
+                    } catch(ex) {
+                        toast('❌ Error reading backup file.');
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+            document.getElementById('clearDataBtn').onclick = () => {
+                if (!isAdmin) return;
+                if (confirm('⚠️ This will permanently delete ALL folders and PDF data. Are you absolutely sure?')) {
+                    tree = { id: 'root', name: 'Home', children: [], prefs: { layout: 'horizontal', size: 50 } };
+                    save();
+                    toast('🗑️ All data has been reset.');
+                    path = ['root'];
+                    render();
+                }
+            };
+
+            // Request notification
+            document.getElementById('reqNotificationBtn').onclick = () => app.openRequestsModal();
+
+            // Account modal
+            document.getElementById('accountBtn').onclick = () => document.getElementById('accountModal').classList.add('active');
+            document.getElementById('closeAccount').onclick = () => document.getElementById('accountModal').classList.remove('active');
+            document.getElementById('logoutBtn').onclick = () => {
+                localStorage.removeItem(USER_KEY);
+                window.location.href = 'index.html';
+            };
+
+            // Close modals on overlay click
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === this) this.classList.remove('active');
+                });
+            });
+
+            // ---------- INIT ----------
+            checkUserAuth();
+            initDB(() => {
+                load();
+                let cur = getCurrent();
+                document.getElementById('sizeSlider').value = cur.prefs.size || 50;
+                document.getElementById('sizeVal').textContent = cur.prefs.size || 50;
+                if (cur.prefs.layout === 'vertical') {
+                    document.getElementById('layoutV').classList.add('active');
+                } else {
+                    document.getElementById('layoutH').classList.add('active');
+                }
+                render();
+            });
+        })();
+    </script>
+</body>
+</html>

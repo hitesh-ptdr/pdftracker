@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Study Portal - Login</title>
+    <style>
+        :root {
+            --bg: #f4f6fb;
+            --card-bg: #ffffff;
+            --text: #1a1a2e;
+            --text-secondary: #5a5a7a;
+            --accent: #4a7bd9;
+            --accent-hover: #3b6bc5;
+            --input-bg: #f8f9fc;
+            --input-border: #d9dce6;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text);
+        }
+        .container {
+            width: 100%;
+            max-width: 460px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 40px 32px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+        .logo { text-align: center; margin-bottom: 24px; }
+        .logo span { font-size: 2.8rem; }
+        h1 { font-size: 1.6rem; font-weight: 700; text-align: center; margin-bottom: 6px; color: var(--text); }
+        .subtitle { text-align: center; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 28px; }
+        .toggle-btns { display: flex; gap: 10px; margin-bottom: 28px; background: #f0f2f8; padding: 5px; border-radius: 12px; }
+        .toggle-btn { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; color: var(--text-secondary); transition: 0.2s; }
+        .toggle-btn.active { background: white; color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .form-panel { display: none; }
+        .form-panel.active { display: block; }
+        .input-group { margin-bottom: 18px; }
+        .input-group label { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 5px; color: var(--text-secondary); }
+        .input-group input { width: 100%; padding: 12px 14px; border: 1px solid var(--input-border); border-radius: 10px; background: var(--input-bg); font-size: 0.9rem; color: var(--text); transition: border 0.2s; outline: none; }
+        .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74, 123, 217, 0.1); }
+        .row { display: flex; gap: 12px; }
+        .row .input-group { flex: 1; }
+        .btn { width: 100%; padding: 13px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem; cursor: pointer; margin-top: 6px; transition: background 0.2s; }
+        .btn:hover { background: var(--accent-hover); }
+        .error-msg { color: #dc2626; font-size: 0.75rem; text-align: center; margin-top: 10px; display: none; }
+        .note { text-align: center; font-size: 0.7rem; color: var(--text-secondary); margin-top: 20px; line-height: 1.4; }
+        @media (max-width: 480px) { .container { padding: 28px 20px; } .row { flex-direction: column; gap: 0; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo"><span>📚</span></div>
+        <h1>Study Portal</h1>
+        <p class="subtitle">Organize your learning journey</p>
+
+        <div class="toggle-btns">
+            <button class="toggle-btn active" id="loginToggle">🔑 Login</button>
+            <button class="toggle-btn" id="registerToggle">✨ Register</button>
+        </div>
+
+        <div class="form-panel active" id="loginPanel">
+            <div class="input-group">
+                <label>📧 Email</label>
+                <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email">
+            </div>
+            <div class="input-group">
+                <label>🔒 Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password">
+            </div>
+            <button class="btn" id="loginBtn">Log In</button>
+            <div class="error-msg" id="loginError"></div>
+        </div>
+
+        <div class="form-panel" id="registerPanel">
+            <div class="row">
+                <div class="input-group">
+                    <label>🧑 First Name</label>
+                    <input type="text" id="regFirstName" placeholder="John">
+                </div>
+                <div class="input-group">
+                    <label>👤 Last Name</label>
+                    <input type="text" id="regLastName" placeholder="Doe">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>📧 Email</label>
+                <input type="email" id="regEmail" placeholder="your@email.com">
+            </div>
+            <div class="input-group">
+                <label>📱 Mobile Number</label>
+                <input type="tel" id="regMobile" placeholder="+91 9876543210">
+            </div>
+            <div class="input-group">
+                <label>🔒 Password</label>
+                <input type="password" id="regPassword" placeholder="Minimum 6 characters">
+            </div>
+            <button class="btn" id="registerBtn">Create Account</button>
+            <div class="error-msg" id="regError"></div>
+        </div>
+
+        <div class="note">⚡ Other users require admin approval to access.</div>
+    </div>
+
+    <script>
+        (function() {
+            const APP_USERS_KEY = 'portal_registered_users';
+            const USER_SESSION_KEY = 'dashboard_user_profile';
+            const SETTINGS_KEY = 'dashboard_settings';
+            const SUPER_ADMIN_EMAIL = 'vkpanwar2004@gmail.com';
+
+            function getStoredUsers() {
+                const data = localStorage.getItem(APP_USERS_KEY);
+                return data ? JSON.parse(data) : [];
+            }
+
+            function saveUsers(users) {
+                localStorage.setItem(APP_USERS_KEY, JSON.stringify(users));
+            }
+
+            function getSettings() {
+                const s = localStorage.getItem(SETTINGS_KEY);
+                if (s) {
+                    try { return JSON.parse(s); } catch(e) {}
+                }
+                return { approvalRequired: true };
+            }
+
+            function showError(panel, msg) {
+                const el = document.getElementById(panel === 'login' ? 'loginError' : 'regError');
+                el.textContent = msg;
+                el.style.display = 'block';
+                setTimeout(() => { el.style.display = 'none'; }, 4000);
+            }
+
+            // Toggle
+            document.getElementById('loginToggle').onclick = () => {
+                document.getElementById('loginToggle').classList.add('active');
+                document.getElementById('registerToggle').classList.remove('active');
+                document.getElementById('loginPanel').classList.add('active');
+                document.getElementById('registerPanel').classList.remove('active');
+                document.getElementById('loginError').style.display = 'none';
+                document.getElementById('regError').style.display = 'none';
+            };
+            document.getElementById('registerToggle').onclick = () => {
+                document.getElementById('registerToggle').classList.add('active');
+                document.getElementById('loginToggle').classList.remove('active');
+                document.getElementById('registerPanel').classList.add('active');
+                document.getElementById('loginPanel').classList.remove('active');
+                document.getElementById('loginError').style.display = 'none';
+                document.getElementById('regError').style.display = 'none';
+            };
+
+            // LOGIN
+            document.getElementById('loginBtn').onclick = function() {
+                const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+                const password = document.getElementById('loginPassword').value.trim();
+
+                if (!email || !password) {
+                    showError('login', 'Please enter both email and password.');
+                    return;
+                }
+
+                // ---- SUPER ADMIN SPECIAL HANDLING ----
+                if (email === SUPER_ADMIN_EMAIL) {
+                    let users = getStoredUsers();
+                    let superUser = users.find(u => u.email === SUPER_ADMIN_EMAIL);
+
+                    if (superUser) {
+                        // Existing super admin
+                        if (superUser.password !== password) {
+                            // Password mismatch – allow overwrite via confirmation
+                            const overwrite = confirm(
+                                '⚠️ Super Admin password does not match the stored one.\n\n' +
+                                'Do you want to overwrite the old password with this new one and log in?'
+                            );
+                            if (overwrite) {
+                                superUser.password = password;
+                                superUser.status = 'approved';
+                                superUser.role = 'admin';
+                                saveUsers(users);
+                                // now proceed to login
+                            } else {
+                                showError('login', 'Login cancelled. Please enter the correct Super Admin password.');
+                                return;
+                            }
+                        }
+                        // Ensure correct status/role
+                        if (superUser.status !== 'approved' || superUser.role !== 'admin') {
+                            superUser.status = 'approved';
+                            superUser.role = 'admin';
+                            saveUsers(users);
+                        }
+                    } else {
+                        // No super admin record yet – create one with entered password
+                        superUser = {
+                            name: 'Super Admin',
+                            email: SUPER_ADMIN_EMAIL,
+                            password: password,
+                            status: 'approved',
+                            role: 'admin',
+                            mobile: ''
+                        };
+                        users.push(superUser);
+                        saveUsers(users);
+                    }
+
+                    // Set session & redirect
+                    localStorage.setItem(USER_SESSION_KEY, JSON.stringify({
+                        name: superUser.name,
+                        email: superUser.email
+                    }));
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+
+                // ---- NORMAL USER LOGIN ----
+                const users = getStoredUsers();
+                const user = users.find(u => u.email === email);
+
+                if (!user) {
+                    showError('login', 'No account found with this email. Please register.');
+                    return;
+                }
+
+                if (user.password !== password) {
+                    showError('login', 'Incorrect password.');
+                    return;
+                }
+
+                const settings = getSettings();
+                if (settings.approvalRequired && user.status !== 'approved') {
+                    showError('login', '⏳ Your account is pending admin approval. You will be notified once approved.');
+                    return;
+                }
+
+                localStorage.setItem(USER_SESSION_KEY, JSON.stringify({
+                    name: user.name || (user.firstName + ' ' + user.lastName),
+                    email: user.email
+                }));
+                window.location.href = 'dashboard.html';
+            };
+
+            // REGISTER
+            document.getElementById('registerBtn').onclick = function() {
+                const firstName = document.getElementById('regFirstName').value.trim();
+                const lastName = document.getElementById('regLastName').value.trim();
+                const email = document.getElementById('regEmail').value.trim().toLowerCase();
+                const mobile = document.getElementById('regMobile').value.trim();
+                const password = document.getElementById('regPassword').value.trim();
+
+                if (!firstName || !lastName || !email || !password) {
+                    showError('reg', 'First name, last name, email, and password are required.');
+                    return;
+                }
+                if (password.length < 6) {
+                    showError('reg', 'Password must be at least 6 characters.');
+                    return;
+                }
+                if (!email.includes('@')) {
+                    showError('reg', 'Please enter a valid email address.');
+                    return;
+                }
+                if (email === SUPER_ADMIN_EMAIL) {
+                    showError('reg', 'This email is reserved for Super Admin.');
+                    return;
+                }
+
+                const users = getStoredUsers();
+                if (users.find(u => u.email === email)) {
+                    showError('reg', 'An account with this email already exists. Please log in.');
+                    return;
+                }
+
+                const newUser = {
+                    name: firstName + ' ' + lastName,
+                    firstName,
+                    lastName,
+                    email,
+                    password,
+                    mobile: mobile || '',
+                    status: 'pending',
+                    role: 'user',
+                    registeredAt: new Date().toISOString()
+                };
+
+                users.push(newUser);
+                saveUsers(users);
+
+                alert('✅ Registration successful! Your account is pending admin approval.\nYou can log in once an admin approves your request.');
+
+                document.getElementById('regFirstName').value = '';
+                document.getElementById('regLastName').value = '';
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regMobile').value = '';
+                document.getElementById('regPassword').value = '';
+
+                document.getElementById('loginToggle').click();
+            };
+
+            // Enter key
+            document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') document.getElementById('loginBtn').click();
+            });
+            document.getElementById('regPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') document.getElementById('registerBtn').click();
+            });
+        })();
+    </script>
+</body>
+</html>
