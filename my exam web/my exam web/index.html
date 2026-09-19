@@ -107,7 +107,7 @@
             </div>
             <div class="input-group">
                 <label>🔒 Password</label>
-                <input type="password" id="regPassword" placeholder="Minimum 6 characters">
+                <input type="password" id="regPassword" placeholder="8+ chars, A-Z, a-z, 0-9">
             </div>
             <button class="btn" id="registerBtn">Create Account</button>
             <div class="error-msg" id="regError"></div>
@@ -125,11 +125,66 @@
 
             function getStoredUsers() {
                 const data = localStorage.getItem(APP_USERS_KEY);
-                return data ? JSON.parse(data) : [];
+                if (!data) return [];
+                try { return JSON.parse(data); } catch(e) { return []; }
             }
 
             function saveUsers(users) {
                 localStorage.setItem(APP_USERS_KEY, JSON.stringify(users));
+            }
+
+            // Passwords are never stored as plain text. PBKDF2 + random salt is used.
+            const PBKDF2_ITERATIONS = 120000;
+            const encoder = new TextEncoder();
+
+            function bytesToBase64(bytes) {
+                let binary = '';
+                bytes.forEach(b => binary += String.fromCharCode(b));
+                return btoa(binary);
+            }
+
+            function base64ToBytes(value) {
+                const binary = atob(value);
+                return Uint8Array.from(binary, c => c.charCodeAt(0));
+            }
+
+            async function hashPassword(password, saltBytes) {
+                const keyMaterial = await crypto.subtle.importKey(
+                    'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']
+                );
+                const bits = await crypto.subtle.deriveBits(
+                    { name: 'PBKDF2', salt: saltBytes, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+                    keyMaterial, 256
+                );
+                return bytesToBase64(new Uint8Array(bits));
+            }
+
+            async function createPasswordRecord(password) {
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+                return {
+                    passwordHash: await hashPassword(password, salt),
+                    passwordSalt: bytesToBase64(salt),
+                    passwordIterations: PBKDF2_ITERATIONS
+                };
+            }
+
+            async function verifyPassword(user, password) {
+                // Backward compatibility: upgrade old plain-text accounts after a successful login.
+                if (user.password && !user.passwordHash) {
+                    if (user.password !== password) return false;
+                    const record = await createPasswordRecord(password);
+                    delete user.password;
+                    Object.assign(user, record);
+                    return true;
+                }
+                if (!user.passwordHash || !user.passwordSalt) return false;
+                try {
+                    const salt = base64ToBytes(user.passwordSalt);
+                    const hash = await hashPassword(password, salt);
+                    return hash === user.passwordHash;
+                } catch(e) {
+                    return false;
+                }
             }
 
             function getSettings() {
@@ -145,6 +200,40 @@
                 el.textContent = msg;
                 el.style.display = 'block';
                 setTimeout(() => { el.style.display = 'none'; }, 4000);
+            }
+
+            function getLockInfo(email) {
+                try { return JSON.parse(localStorage.getItem('login_lock_' + email)) || { attempts: 0, lockedUntil: 0 }; }
+                catch(e) { return { attempts: 0, lockedUntil: 0 }; }
+            }
+
+            function isLocked(email) {
+                const info = getLockInfo(email);
+                if (info.lockedUntil && Date.now() < info.lockedUntil) return info.lockedUntil;
+                return 0;
+            }
+
+            function recordFailedLogin(email) {
+                const info = getLockInfo(email);
+                info.attempts = (info.attempts || 0) + 1;
+                if (info.attempts >= 5) {
+                    info.lockedUntil = Date.now() + (15 * 60 * 1000);
+                    info.attempts = 0;
+                }
+                localStorage.setItem('login_lock_' + email, JSON.stringify(info));
+            }
+
+            function clearLoginLock(email) {
+                localStorage.removeItem('login_lock_' + email);
+            }
+
+            async function createSession(user) {
+                localStorage.setItem(USER_SESSION_KEY, JSON.stringify({
+                    name: user.name || 'User',
+                    email: user.email,
+                    issuedAt: Date.now(),
+                    expiresAt: Date.now() + (8 * 60 * 60 * 1000)
+                }));
             }
 
             // Toggle
@@ -166,109 +255,86 @@
             };
 
             // LOGIN
-            document.getElementById('loginBtn').onclick = function() {
+            document.getElementById('loginBtn').onclick = async function() {
                 const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-                const password = document.getElementById('loginPassword').value.trim();
+                const password = document.getElementById('loginPassword').value;
 
                 if (!email || !password) {
                     showError('login', 'Please enter both email and password.');
                     return;
                 }
 
-                // ---- SUPER ADMIN SPECIAL HANDLING ----
-                if (email === SUPER_ADMIN_EMAIL) {
-                    let users = getStoredUsers();
-                    let superUser = users.find(u => u.email === SUPER_ADMIN_EMAIL);
+                const lockedUntil = isLocked(email);
+                if (lockedUntil) {
+                    const mins = Math.ceil((lockedUntil - Date.now()) / 60000);
+                    showError('login', `Too many failed attempts. Try again in ${mins} minute(s).`);
+                    return;
+                }
 
-                    if (superUser) {
-                        // Existing super admin
-                        if (superUser.password !== password) {
-                            // Password mismatch – allow overwrite via confirmation
-                            const overwrite = confirm(
-                                '⚠️ Super Admin password does not match the stored one.\n\n' +
-                                'Do you want to overwrite the old password with this new one and log in?'
-                            );
-                            if (overwrite) {
-                                superUser.password = password;
-                                superUser.status = 'approved';
-                                superUser.role = 'admin';
-                                saveUsers(users);
-                                // now proceed to login
-                            } else {
-                                showError('login', 'Login cancelled. Please enter the correct Super Admin password.');
-                                return;
-                            }
-                        }
-                        // Ensure correct status/role
-                        if (superUser.status !== 'approved' || superUser.role !== 'admin') {
-                            superUser.status = 'approved';
-                            superUser.role = 'admin';
-                            saveUsers(users);
-                        }
-                    } else {
-                        // No super admin record yet – create one with entered password
-                        superUser = {
-                            name: 'Super Admin',
-                            email: SUPER_ADMIN_EMAIL,
-                            password: password,
-                            status: 'approved',
-                            role: 'admin',
-                            mobile: ''
-                        };
-                        users.push(superUser);
-                        saveUsers(users);
-                    }
+                const users = getStoredUsers();
+                let user = users.find(u => u.email === email);
 
-                    // Set session & redirect
-                    localStorage.setItem(USER_SESSION_KEY, JSON.stringify({
-                        name: superUser.name,
-                        email: superUser.email
-                    }));
+                // Super Admin is created only once. A wrong password can NEVER overwrite it.
+                if (email === SUPER_ADMIN_EMAIL && !user) {
+                    const record = await createPasswordRecord(password);
+                    user = {
+                        name: 'Super Admin', email: SUPER_ADMIN_EMAIL,
+                        ...record, status: 'approved', role: 'admin', mobile: ''
+                    };
+                    users.push(user);
+                    saveUsers(users);
+                    await createSession(user);
                     window.location.href = 'dashboard.html';
                     return;
                 }
 
-                // ---- NORMAL USER LOGIN ----
-                const users = getStoredUsers();
-                const user = users.find(u => u.email === email);
-
                 if (!user) {
-                    showError('login', 'No account found with this email. Please register.');
+                    recordFailedLogin(email);
+                    showError('login', 'Invalid email or password.');
                     return;
                 }
 
-                if (user.password !== password) {
-                    showError('login', 'Incorrect password.');
+                const valid = await verifyPassword(user, password);
+                if (!valid) {
+                    recordFailedLogin(email);
+                    showError('login', 'Invalid email or password.');
                     return;
+                }
+
+                // Persist a legacy-account hash upgrade if verifyPassword migrated it.
+                saveUsers(users);
+                clearLoginLock(email);
+
+                if (email === SUPER_ADMIN_EMAIL) {
+                    user.status = 'approved';
+                    user.role = 'admin';
+                    saveUsers(users);
                 }
 
                 const settings = getSettings();
                 if (settings.approvalRequired && user.status !== 'approved') {
-                    showError('login', '⏳ Your account is pending admin approval. You will be notified once approved.');
+                    showError('login', '⏳ Your account is pending admin approval.');
                     return;
                 }
 
-                localStorage.setItem(USER_SESSION_KEY, JSON.stringify({
-                    name: user.name || (user.firstName + ' ' + user.lastName),
-                    email: user.email
-                }));
+                await createSession(user);
                 window.location.href = 'dashboard.html';
             };
 
             // REGISTER
-            document.getElementById('registerBtn').onclick = function() {
+            document.getElementById('registerBtn').onclick = async function() {
                 const firstName = document.getElementById('regFirstName').value.trim();
                 const lastName = document.getElementById('regLastName').value.trim();
                 const email = document.getElementById('regEmail').value.trim().toLowerCase();
                 const mobile = document.getElementById('regMobile').value.trim();
-                const password = document.getElementById('regPassword').value.trim();
+                const password = document.getElementById('regPassword').value;
 
                 if (!firstName || !lastName || !email || !password) {
                     showError('reg', 'First name, last name, email, and password are required.');
                     return;
                 }
-                if (password.length < 6) {
-                    showError('reg', 'Password must be at least 6 characters.');
+                if (password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+                    showError('reg', 'Password must be 8+ characters and include uppercase, lowercase and a number.');
                     return;
                 }
                 if (!email.includes('@')) {
@@ -286,29 +352,26 @@
                     return;
                 }
 
+                const passwordRecord = await createPasswordRecord(password);
                 const newUser = {
                     name: firstName + ' ' + lastName,
-                    firstName,
-                    lastName,
-                    email,
-                    password,
+                    firstName, lastName, email,
+                    ...passwordRecord,
                     mobile: mobile || '',
-                    status: 'pending',
-                    role: 'user',
+                    status: 'pending', role: 'user',
                     registeredAt: new Date().toISOString()
                 };
 
                 users.push(newUser);
                 saveUsers(users);
 
-                alert('✅ Registration successful! Your account is pending admin approval.\nYou can log in once an admin approves your request.');
+                alert('✅ Registration successful! Your password is securely stored. Your account is pending admin approval.');
 
                 document.getElementById('regFirstName').value = '';
                 document.getElementById('regLastName').value = '';
                 document.getElementById('regEmail').value = '';
                 document.getElementById('regMobile').value = '';
                 document.getElementById('regPassword').value = '';
-
                 document.getElementById('loginToggle').click();
             };
 

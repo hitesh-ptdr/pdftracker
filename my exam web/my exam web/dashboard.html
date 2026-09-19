@@ -267,27 +267,71 @@
         }
         .pdf-actions button:hover { background: var(--border); color: var(--text); }
 
-        .tracker-section {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 12px; padding: 20px; margin: 24px auto; max-width: 850px;
-            display: none;
+        /* ---------- Per-PDF Revision Progress ---------- */
+        .pdf-progress {
+            width: 100%;
+            margin-top: 10px;
+            padding-top: 9px;
+            border-top: 1px solid var(--border);
         }
-        .tracker-section.show { display: block; }
-        .tracker-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 18px; text-align: center; }
-        .tracker-row { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
-        .tracker-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-        .tracker-circle { width: 56px; height: 56px; position: relative; }
-        .tracker-circle svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-        .tracker-bg { fill: none; stroke: var(--track-bg); stroke-width: 5; }
-        .tracker-fill {
-            fill: none; stroke: var(--track-fill); stroke-width: 5; stroke-linecap: round;
-            transition: stroke-dashoffset 0.5s ease;
+        .pdf-progress-title {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
         }
-        .tracker-text {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 0.7rem; font-weight: 700; color: var(--text);
+        .pdf-progress-row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
-        .tracker-label { font-size: 0.62rem; color: var(--text-secondary); letter-spacing: 0.3px; }
+        .pdf-progress-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .pdf-progress-circle {
+            width: 42px;
+            height: 42px;
+            position: relative;
+        }
+        .pdf-progress-circle svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        .pdf-progress-bg {
+            fill: none;
+            stroke: var(--track-bg);
+            stroke-width: 4;
+        }
+        .pdf-progress-fill {
+            fill: none;
+            stroke: var(--track-fill);
+            stroke-width: 4;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.25s ease;
+        }
+        .pdf-progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.58rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .pdf-progress-label {
+            font-size: 0.55rem;
+            color: var(--text-secondary);
+        }
+        .pdf-progress-item:hover .pdf-progress-circle {
+            transform: scale(1.05);
+        }
 
         .modal-overlay {
             position: fixed; inset: 0; background: var(--modal-bg);
@@ -402,23 +446,11 @@
             <span class="size-val" id="sizeVal">50</span>
         </div>
         <div class="toolbar-sep admin-element"></div>
-        <button class="action-btn admin-element" id="addFolderBtn">📁+ New Folder</button>
-        <button class="action-btn pdf admin-element" id="uploadPdfBtn" style="display: none;">📄+ Upload PDF</button>
+        <button class="action-btn" id="addFolderBtn">📁+ New Folder</button>
+        <button class="action-btn pdf" id="uploadPdfBtn">📄+ Upload PDF</button>
     </div>
 
     <div class="main" id="mainContainer"></div>
-
-    <div class="tracker-section" id="trackerSection">
-        <div class="tracker-title">📊 Revision Progress (All PDFs)</div>
-        <div class="tracker-row">
-            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track1" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText1">0%</span></div><span class="tracker-label">Rev 1</span></div>
-            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track2" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText2">0%</span></div><span class="tracker-label">Rev 2</span></div>
-            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track3" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText3">0%</span></div><span class="tracker-label">Rev 3</span></div>
-            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track4" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText4">0%</span></div><span class="tracker-label">Rev 4</span></div>
-            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track5" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText5">0%</span></div><span class="tracker-label">Rev 5</span></div>
-            <div class="tracker-item"><div class="tracker-circle"><svg viewBox="0 0 36 36"><circle class="tracker-bg" cx="18" cy="18" r="15"/><circle class="tracker-fill" id="track6" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><span class="tracker-text" id="trackText6">0%</span></div><span class="tracker-label">Rev 6</span></div>
-        </div>
-    </div>
 
     <!-- Modals -->
     <div class="modal-overlay" id="modal">
@@ -514,8 +546,8 @@
         <div class="modal-box" style="max-width:430px;">
             <h3 id="scheduleModalTitle">📅 Revision Schedule</h3>
             <p class="revision-schedule-info">
-                Yahan har revision ki <strong>date ka sirf day number (1–30)</strong> set karo.
-                Example: aaj 18 hai, to Rev 1 = <strong>18</strong> aur agla revision do din baad ho to Rev 2 = <strong>20</strong>.
+                Yahan har revision ki <strong>date ka day number (1–31)</strong> apni marzi se set karo.
+                Example: Rev 1 = <strong>12</strong>, Rev 2 = <strong>17</strong>, Rev 3 = <strong>24</strong>. Har revision ki date alag/random rakh sakte ho.
                 Ye date baad me bhi edit kar sakte ho.
             </p>
             <div id="revisionScheduleList"></div>
@@ -543,7 +575,8 @@
     <script>
         (function() {
             // ---------- CONSTANTS ----------
-            const STORAGE_KEY = 'dashboard_data_v3_tree';
+            const LEGACY_STORAGE_KEY = 'dashboard_data_v3_tree';
+            const STORAGE_PREFIX = 'dashboard_data_v4_user_';
             const USER_KEY = 'dashboard_user_profile';
             const DARK_KEY = 'dashboard_dark';
             const APP_USERS_KEY = 'portal_registered_users';
@@ -619,6 +652,12 @@
                 localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
             }
 
+            // ---------- USER-SCOPED STORAGE ----------
+            function getStorageKey() {
+                const safeEmail = (currentUserEmail || 'unknown').trim().toLowerCase();
+                return STORAGE_PREFIX + encodeURIComponent(safeEmail);
+            }
+
             // ---------- AUTH & USER MANAGEMENT ----------
             function checkUserAuth() {
                 const sessionData = localStorage.getItem(USER_KEY);
@@ -638,28 +677,46 @@
                 const email = (u.email || '').trim().toLowerCase();
                 currentUserEmail = email;
 
-                document.getElementById('accName').textContent = '👤 ' + (u.name || 'User');
-                document.getElementById('accDetail').textContent = u.email;
-
-                // ✅ Super Admin always gets full access
-                if (email === SUPER_ADMIN_EMAIL) {
-                    isAdmin = true;
-                    document.body.classList.add('is-admin');
-                    document.getElementById('accRole').textContent = 'Role: Super Admin 👑';
-                    renderRequestsCount();
+                // Sessions expire after 8 hours.
+                if (!u.issuedAt || !u.expiresAt || Date.now() > Number(u.expiresAt)) {
+                    localStorage.removeItem(USER_KEY);
+                    alert('🔒 Your session has expired. Please log in again.');
+                    window.location.href = 'index.html';
                     return;
                 }
 
-                // 🔍 Look up user in registered users list
+                // Always validate the account against the stored user record.
                 const users = JSON.parse(localStorage.getItem(APP_USERS_KEY)) || [];
                 const userRecord = users.find(user => user.email === email);
                 const settings = getSettings();
 
-                // ❌ If user not found in registered list at all
+                document.getElementById('accName').textContent = '👤 ' + (userRecord?.name || u.name || 'User');
+                document.getElementById('accDetail').textContent = email;
+
                 if (!userRecord) {
-                    alert('⚠️ Invalid user account. Please register first.');
                     localStorage.removeItem(USER_KEY);
+                    alert('⚠️ Invalid user account. Please log in again.');
                     window.location.href = 'index.html';
+                    return;
+                }
+
+                // Super Admin role is fixed and cannot be changed from the user-management UI.
+                if (email === SUPER_ADMIN_EMAIL) {
+                    if (userRecord.role !== 'admin' || userRecord.status !== 'approved') {
+                        userRecord.role = 'admin';
+                        userRecord.status = 'approved';
+                        localStorage.setItem(APP_USERS_KEY, JSON.stringify(users));
+                    }
+                    isAdmin = true;
+                    document.body.classList.add('is-admin');
+                    document.getElementById('accRole').textContent = 'Role: Super Admin 👑';
+
+                    // One-time migration: the old global workspace belongs to the Super Admin.
+                    const adminScopedKey = getStorageKey();
+                    if (!localStorage.getItem(adminScopedKey) && localStorage.getItem(LEGACY_STORAGE_KEY)) {
+                        localStorage.setItem(adminScopedKey, localStorage.getItem(LEGACY_STORAGE_KEY));
+                    }
+                    renderRequestsCount();
                     return;
                 }
 
@@ -779,6 +836,7 @@
             app.toggleAdminRole = function(email, makeAdmin) {
                 if (!isAdmin) return;
                 let users = JSON.parse(localStorage.getItem(APP_USERS_KEY)) || [];
+                if (email === SUPER_ADMIN_EMAIL) return;
                 let idx = users.findIndex(u => u.email === email);
                 if (idx !== -1) {
                     users[idx].role = makeAdmin ? 'admin' : 'user';
@@ -790,7 +848,8 @@
 
             // ---------- TREE FUNCTIONS ----------
             function load() {
-                const localData = localStorage.getItem(STORAGE_KEY);
+                const storageKey = getStorageKey();
+                const localData = localStorage.getItem(storageKey);
                 if (localData) {
                     try {
                         const parsed = JSON.parse(localData);
@@ -809,7 +868,7 @@
             }
 
             function createDefaults() {
-                if (localStorage.getItem(STORAGE_KEY)) return;
+                if (localStorage.getItem(getStorageKey())) return;
                 tree = {
                     id: 'root', name: 'Home', prefs: { layout: 'horizontal', size: 50 },
                     children: [
@@ -851,7 +910,7 @@
                 if (n.children) n.children.forEach(fixTree);
             }
 
-            function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tree)); }
+            function save() { localStorage.setItem(getStorageKey(), JSON.stringify(tree)); }
 
             function getCurrent() {
                 let n = tree;
@@ -896,13 +955,6 @@
                 return null;
             }
 
-            function getAllPdfs(node) {
-                let pdfs = [];
-                if (node.type === 'pdf') pdfs.push(node);
-                if (node.children) node.children.forEach(c => pdfs = pdfs.concat(getAllPdfs(c)));
-                return pdfs;
-            }
-
             function toast(msg) {
                 const t = document.getElementById('toast');
                 t.textContent = msg;
@@ -928,8 +980,9 @@
                     bc.appendChild(sp);
                 });
 
-                // Show/hide upload button
-                if (path.length === 1 || !isAdmin) {
+                // Every approved user has a separate workspace and can upload PDFs inside folders.
+                // Admin-only controls (Requests / Settings) remain restricted by isAdmin.
+                if (path.length === 1 || !currentUserEmail) {
                     document.getElementById('uploadPdfBtn').style.display = 'none';
                 } else {
                     document.getElementById('uploadPdfBtn').style.display = 'inline-block';
@@ -940,7 +993,6 @@
 
                 if (items.length === 0) {
                     main.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:50px 0;font-size:0.9rem;">📂 No files or folders here.</p>';
-                    updateTracker();
                     return;
                 }
 
@@ -962,31 +1014,53 @@
                             if (!e.target.classList.contains('tick-btn') && !e.target.closest('.pdf-actions'))
                                 app.openPdfOptions(item.id);
                         };
-                        let ticks = '';
+                        /*
+                         * Every PDF gets its OWN 6-circle revision chart.
+                         * One click on a revision = 100%.
+                         */
+                        let progressChart = '';
                         for (let i = 0; i < 6; i++) {
-                            const pct = Number(item.ticks?.[i]) || 0;
-                            ticks += `<button class="tick-btn ${pct >= 100 ? 'checked' : ''}" onclick="event.stopPropagation(); app.cycleRevision('${item.id}', ${i})" title="Rev ${i+1}: ${pct}% — click to add 10%"></button>`;
+                            const pct = Number(item.ticks?.[i]) >= 100 ? 100 : 0;
+                            const circumference = 2 * Math.PI * 15;
+                            const offset = circumference - (circumference * pct) / 100;
+
+                            progressChart += `
+                                <div class="pdf-progress-item"
+                                     onclick="event.stopPropagation(); app.cycleRevision('${item.id}', ${i})"
+                                     title="Rev ${i + 1}: ${pct}% — click to mark ${pct >= 100 ? '0%' : '100%'}">
+                                    <div class="pdf-progress-circle">
+                                        <svg viewBox="0 0 36 36">
+                                            <circle class="pdf-progress-bg" cx="18" cy="18" r="15"/>
+                                            <circle class="pdf-progress-fill"
+                                                    cx="18" cy="18" r="15"
+                                                    stroke-dasharray="${circumference.toFixed(1)}"
+                                                    stroke-dashoffset="${offset.toFixed(1)}"/>
+                                        </svg>
+                                        <span class="pdf-progress-text">${pct}%</span>
+                                    </div>
+                                    <span class="pdf-progress-label">Rev ${i + 1}</span>
+                                </div>`;
                         }
 
                         const schedule = (item.revisionDates || []).slice(0, 6)
                             .map((day, i) => day ? `<span class="revision-day-badge">R${i+1}: ${day}</span>` : '')
                             .filter(Boolean).join('');
 
-                        const overall = Math.round(
-                            item.ticks.slice(0, 6).reduce((sum, v) => sum + (Number(v) || 0), 0) / 6
-                        );
-
-                        const actionButtons = isAdmin ? `
+                        const actionButtons = `
                             <div class="pdf-actions">
                                 <button onclick="event.stopPropagation(); app.editSchedule('${item.id}')" title="Set revision dates">📅 Dates</button>
-                                <button onclick="event.stopPropagation(); app.deleteItem('${item.id}')" title="Delete PDF">🗑️</button>
-                            </div>` : '';
+                                ${isAdmin ? `<button onclick="event.stopPropagation(); app.deleteItem('${item.id}')" title="Delete PDF">🗑️</button>` : ''}
+                            </div>`;
 
                         card.innerHTML = `
                             <div class="pdf-icon-box">📄</div>
                             <div class="pdf-name">${item.name} <span class="pdf-size">(${item.size || 'unknown'})</span></div>
-                            <div class="pdf-ticks">${ticks}</div>
-                            <div class="progress-summary">Overall: ${overall}%</div>
+
+                            <div class="pdf-progress">
+                                <div class="pdf-progress-title">📊 Revision Progress</div>
+                                <div class="pdf-progress-row">${progressChart}</div>
+                            </div>
+
                             ${schedule ? `<div class="revision-schedule">${schedule}</div>` : ''}
                             ${actionButtons}`;
                     } else {
@@ -1002,23 +1076,6 @@
 
                 main.innerHTML = '';
                 main.appendChild(grid);
-                updateTracker();
-            }
-
-            function updateTracker() {
-                const allPdfs = getAllPdfs(tree);
-                const tracker = document.getElementById('trackerSection');
-                if (allPdfs.length === 0) {
-                    tracker.style.display = 'none';
-                    return;
-                }
-                tracker.style.display = 'block';
-                for (let i = 0; i < 6; i++) {
-                    const total = allPdfs.reduce((sum, p) => sum + (Number(p.ticks?.[i]) || 0), 0);
-                    const pct = Math.round(total / allPdfs.length);
-                    document.getElementById(`trackText${i+1}`).textContent = pct + '%';
-                    document.getElementById(`track${i+1}`).style.strokeDashoffset = 94.2 - (94.2 * pct) / 100;
-                }
             }
 
             // ---------- EVENT BINDINGS ----------
@@ -1056,14 +1113,14 @@
             // New Folder Modal
             const modal = document.getElementById('modal');
             document.getElementById('addFolderBtn').onclick = () => {
-                if (!isAdmin) return;
+                if (!currentUserEmail) return;
                 document.getElementById('modalTitle').textContent = '📁 Create New Folder';
                 document.getElementById('modalInput').value = '';
                 modal.classList.add('active');
             };
             document.getElementById('modalCancel').onclick = () => modal.classList.remove('active');
             document.getElementById('modalOk').onclick = () => {
-                if (!isAdmin) return;
+                if (!currentUserEmail) return;
                 let name = document.getElementById('modalInput').value.trim();
                 if (!name) { toast('Please enter a folder name.'); return; }
                 let cur = getCurrent();
@@ -1084,13 +1141,13 @@
             // Upload PDF Modal
             const pdfModal = document.getElementById('pdfModal');
             document.getElementById('uploadPdfBtn').onclick = () => {
-                if (!isAdmin) return;
+                if (!currentUserEmail) return;
                 document.getElementById('pdfFileInput').value = '';
                 pdfModal.classList.add('active');
             };
             document.getElementById('pdfCancel').onclick = () => pdfModal.classList.remove('active');
             document.getElementById('pdfOk').onclick = () => {
-                if (!isAdmin) return;
+                if (!currentUserEmail) return;
                 let files = document.getElementById('pdfFileInput').files;
                 if (!files.length) { toast('Please select at least one PDF file.'); return; }
                 let cur = getCurrent();
@@ -1122,7 +1179,7 @@
 
             // Delete item
             app.deleteItem = function(id) {
-                if (!isAdmin) { toast('⚠️ Only admins can delete items.'); return; }
+                if (!currentUserEmail) { toast('⚠️ Please log in first.'); return; }
                 if (!confirm('Are you sure you want to permanently delete this item?')) return;
                 (function remove(n) {
                     if (!n.children) return;
@@ -1139,7 +1196,7 @@
                 render();
             };
 
-            // Quick revision progress: 0 -> 10 -> 20 ... -> 100 -> 0.
+            // One click marks a revision as 100%. Second click resets it to 0%.
             app.cycleRevision = function(id, idx) {
                 const p = findById(tree, id);
                 if (!p || idx < 0 || idx >= 6) return;
@@ -1147,12 +1204,10 @@
                 if (!Array.isArray(p.ticks)) p.ticks = [];
                 while (p.ticks.length < 6) p.ticks.push(0);
 
-                let pct = Number(p.ticks[idx]) || 0;
-                pct = pct >= 100 ? 0 : pct + 10;
-                p.ticks[idx] = pct;
+                const current = Number(p.ticks[idx]) || 0;
+                p.ticks[idx] = current >= 100 ? 0 : 100;
 
                 save();
-                updateTracker();
                 render();
             };
 
@@ -1160,10 +1215,10 @@
                 app.cycleRevision(id, idx);
             };
 
-            // Edit future revision dates as day numbers 1–30.
+            // Edit each revision date independently; dates can be any day from 1–31 and do not need to be consecutive.
             app.editSchedule = function(id) {
-                if (!isAdmin) {
-                    toast('⚠️ Only admins can edit revision dates.');
+                if (!currentUserEmail) {
+                    toast('⚠️ Please log in first.');
                     return;
                 }
 
@@ -1180,15 +1235,15 @@
 
                 for (let i = 0; i < 6; i++) {
                     const value = Number(p.revisionDates[i]);
-                    const safeValue = Number.isInteger(value) && value >= 1 && value <= 30 ? value : '';
+                    const safeValue = Number.isInteger(value) && value >= 1 && value <= 31 ? value : '';
 
                     const row = document.createElement('div');
                     row.className = 'revision-day-row';
                     row.innerHTML = `
                         <label>Rev ${i + 1}</label>
                         <input class="revision-day-input" id="revDay${i}"
-                               type="number" min="1" max="30" step="1"
-                               placeholder="Day (1–30)" value="${safeValue}">
+                               type="number" min="1" max="31" step="1"
+                               placeholder="Day (1–31)" value="${safeValue}">
                     `;
                     list.appendChild(row);
                 }
@@ -1201,7 +1256,7 @@
             };
 
             document.getElementById('scheduleSave').onclick = () => {
-                if (!isAdmin) return;
+                if (!currentUserEmail) return;
                 const p = findById(tree, currentPdfId);
                 if (!p || p.type !== 'pdf') return;
 
@@ -1214,8 +1269,8 @@
                     }
 
                     const day = Number(raw);
-                    if (!Number.isInteger(day) || day < 1 || day > 30) {
-                        toast('⚠️ Date must be a whole number from 1 to 30.');
+                    if (!Number.isInteger(day) || day < 1 || day > 31) {
+                        toast('⚠️ Date must be a whole number from 1 to 31.');
                         return;
                     }
                     p.revisionDates.push(day);
