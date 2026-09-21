@@ -145,8 +145,9 @@
         .toolbar-sep { width: 1px; height: 24px; background: var(--border); margin: 0 6px; }
 
         .main { padding: 14px; max-width: 1100px; margin: auto; }
-        .folder-row { display: flex; flex-wrap: wrap; gap: 14px; }
-        .folder-row.vertical { flex-direction: column; }
+        .folder-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; align-items: start; }
+        .folder-row.vertical { display: flex; flex-direction: column; gap: 10px; }
+        .folder-row.vertical > .folder-card, .folder-row.vertical > .pdf-card { width: 100%; }
 
         .folder-row:not(.vertical) .folder-card {
             display: flex; flex-direction: column; align-items: center; padding: 14px 10px;
@@ -186,7 +187,8 @@
             border-radius: 10px; text-align: center; transition: 0.15s; user-select: none;
         }
         .folder-row.vertical .pdf-card {
-            display: flex; flex-direction: row; align-items: center; padding: 10px 14px; gap: 12px;
+            display: flex; flex-direction: row; align-items: center; padding: 10px 14px; gap: 14px;
+            width: 100%; min-width: 0; box-sizing: border-box;
             cursor: pointer; background: var(--pdf-bg); border: 1px solid var(--border);
             border-radius: 10px; transition: 0.15s; user-select: none;
         }
@@ -198,7 +200,11 @@
         }
         body.dark .pdf-icon-box { background: #4a2020; }
         .pdf-name { font-size: 0.78rem; font-weight: 500; margin-top: 6px; word-break: break-word; }
-        .folder-row.vertical .pdf-name { margin-top: 0; flex: 1; }
+        .folder-row.vertical .pdf-name {
+            margin-top: 0; flex: 1 1 320px; min-width: 0;
+            white-space: normal; word-break: normal; overflow-wrap: anywhere;
+            text-align: left;
+        }
         .pdf-size { font-size: 0.65rem; color: var(--text-secondary); }
         .pdf-ticks { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
 
@@ -266,6 +272,8 @@
             padding: 3px 9px; cursor: pointer; font-size: 0.65rem; color: var(--text-secondary);
         }
         .pdf-actions button:hover { background: var(--border); color: var(--text); }
+        .delete-item-btn { border-color: #dc2626 !important; color: #b91c1c !important; background: #fff1f2 !important; font-weight: 700; }
+        .delete-item-btn:hover { background: #fee2e2 !important; color: #991b1b !important; }
 
         /* ---------- Per-PDF Revision Progress ---------- */
         .pdf-progress {
@@ -273,6 +281,22 @@
             margin-top: 10px;
             padding-top: 9px;
             border-top: 1px solid var(--border);
+        }
+        .folder-row.vertical .pdf-progress {
+            width: auto; flex: 0 0 auto; margin-top: 0; padding-top: 0;
+            border-top: 0; min-width: 330px;
+        }
+        .folder-row.vertical .pdf-progress-title {
+            display: none;
+        }
+        .folder-row.vertical .pdf-progress-row {
+            justify-content: flex-start; flex-wrap: nowrap; gap: 8px;
+        }
+        .folder-row.vertical .pdf-actions {
+            flex: 0 0 auto; margin-top: 0; margin-left: auto;
+        }
+        .folder-row.vertical .revision-schedule {
+            flex: 0 1 auto; margin-top: 0; justify-content: flex-start;
         }
         .pdf-progress-title {
             font-size: 0.68rem;
@@ -677,13 +701,8 @@
                 const email = (u.email || '').trim().toLowerCase();
                 currentUserEmail = email;
 
-                // Sessions expire after 8 hours.
-                if (!u.issuedAt || !u.expiresAt || Date.now() > Number(u.expiresAt)) {
-                    localStorage.removeItem(USER_KEY);
-                    alert('🔒 Your session has expired. Please log in again.');
-                    window.location.href = 'index.html';
-                    return;
-                }
+                // Persistent session: stay logged in until the user explicitly logs out.
+                // No time-based expiry is used here.
 
                 // Always validate the account against the stored user record.
                 const users = JSON.parse(localStorage.getItem(APP_USERS_KEY)) || [];
@@ -997,10 +1016,19 @@
                 }
 
                 const prefs = current.prefs || { layout: 'horizontal', size: 50 };
-                const grid = document.createElement('div');
-                grid.className = 'folder-row' + (prefs.layout === 'vertical' ? ' vertical' : '');
+                current.prefs = prefs;
+                const isList = prefs.layout === 'vertical';
 
-                if (prefs.layout !== 'vertical') {
+                // Keep Grid/List controls synchronized with the current folder.
+                document.getElementById('layoutH').classList.toggle('active', !isList);
+                document.getElementById('layoutV').classList.toggle('active', isList);
+                document.getElementById('sizeSlider').value = Number(prefs.size) || 50;
+                document.getElementById('sizeVal').textContent = Number(prefs.size) || 50;
+
+                const grid = document.createElement('div');
+                grid.className = 'folder-row' + (isList ? ' vertical' : '');
+
+                if (!isList) {
                     grid.style.display = 'grid';
                     grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${prefs.size + 90}px, 1fr))`;
                     grid.style.gap = '14px';
@@ -1049,7 +1077,7 @@
                         const actionButtons = `
                             <div class="pdf-actions">
                                 <button onclick="event.stopPropagation(); app.editSchedule('${item.id}')" title="Set revision dates">📅 Dates</button>
-                                ${isAdmin ? `<button onclick="event.stopPropagation(); app.deleteItem('${item.id}')" title="Delete PDF">🗑️</button>` : ''}
+                                ${isAdmin ? `<button class="delete-item-btn" onclick="event.stopPropagation(); app.deleteItem('${item.id}')" title="Delete PDF">🗑️ Delete</button>` : ''}
                             </div>`;
 
                         card.innerHTML = `
@@ -1066,7 +1094,7 @@
                     } else {
                         card.className = 'folder-card';
                         card.onclick = () => nav(item.id);
-                        let delBtn = isAdmin ? `<button class="mini-btn" onclick="event.stopPropagation(); app.deleteItem(${item.id})" title="Delete Folder">🗑️</button>` : '';
+                        let delBtn = isAdmin ? `<button class="mini-btn delete-item-btn" onclick="event.stopPropagation(); app.deleteItem(${item.id})" title="Delete Folder">🗑️ Delete</button>` : '';
                         card.innerHTML = `
                             <div class="folder-icon"><div class="folder-tab"></div><span style="font-size:1.2rem;">📘</span></div>
                             <div class="folder-name">${item.name} ${delBtn}</div>`;
@@ -1177,22 +1205,54 @@
                 }
             };
 
-            // Delete item
+            // Delete item — Admin only. Deleting a folder also removes all PDFs
+            // inside that folder from IndexedDB so no orphan PDF data remains.
             app.deleteItem = function(id) {
                 if (!currentUserEmail) { toast('⚠️ Please log in first.'); return; }
-                if (!confirm('Are you sure you want to permanently delete this item?')) return;
-                (function remove(n) {
-                    if (!n.children) return;
-                    let idx = n.children.findIndex(x => x.id == id);
-                    if (idx !== -1) {
-                        n.children.splice(idx, 1);
-                        deletePdfFromDB(id);
-                        return;
+                if (!isAdmin) { toast('⚠️ Only Admin can delete folders or PDFs.'); return; }
+
+                function collectPdfIds(node, ids) {
+                    if (!node) return;
+                    if (node.type === 'pdf') ids.push(node.id);
+                    if (Array.isArray(node.children)) {
+                        node.children.forEach(child => collectPdfIds(child, ids));
                     }
-                    n.children.forEach(remove);
-                })(tree);
+                }
+
+                function findAndRemove(parent) {
+                    if (!parent || !Array.isArray(parent.children)) return null;
+                    const index = parent.children.findIndex(x => String(x.id) === String(id));
+                    if (index !== -1) {
+                        return parent.children.splice(index, 1)[0];
+                    }
+                    for (const child of parent.children) {
+                        const removed = findAndRemove(child);
+                        if (removed) return removed;
+                    }
+                    return null;
+                }
+
+                let target = findById(tree, id);
+                if (!target) {
+                    toast('⚠️ Item not found.');
+                    return;
+                }
+
+                const isFolder = target.type === 'folder';
+                const message = isFolder
+                    ? `Delete folder "${target.name}" and all PDFs inside it? This cannot be undone.`
+                    : `Delete PDF "${target.name}" permanently? This cannot be undone.`;
+
+                if (!confirm(message)) return;
+
+                const pdfIds = [];
+                collectPdfIds(target, pdfIds);
+                const removed = findAndRemove(tree, id);
+                if (!removed) return;
+
+                pdfIds.forEach(pdfId => deletePdfFromDB(pdfId));
                 save();
-                toast('🗑️ Item deleted.');
+                toast(isFolder ? '🗑️ Folder and its PDFs deleted.' : '🗑️ PDF deleted.');
                 render();
             };
 

@@ -228,12 +228,25 @@
             }
 
             async function createSession(user) {
+                // Session remains active until the user explicitly logs out.
                 localStorage.setItem(USER_SESSION_KEY, JSON.stringify({
                     name: user.name || 'User',
                     email: user.email,
-                    issuedAt: Date.now(),
-                    expiresAt: Date.now() + (8 * 60 * 60 * 1000)
+                    loggedInAt: Date.now(),
+                    persistent: true
                 }));
+            }
+
+            // If the user is already logged in, do not ask for the password again.
+            // dashboard.html will validate the stored account before opening the workspace.
+            try {
+                const existingSession = JSON.parse(localStorage.getItem(USER_SESSION_KEY) || 'null');
+                if (existingSession && existingSession.email) {
+                    window.location.replace('dashboard.html');
+                    return;
+                }
+            } catch (e) {
+                localStorage.removeItem(USER_SESSION_KEY);
             }
 
             // Toggle
